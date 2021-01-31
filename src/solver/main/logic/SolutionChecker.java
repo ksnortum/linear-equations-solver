@@ -24,13 +24,13 @@ public class SolutionChecker {
 
             // loop through columns to see if they're all zero, except constant
             for (int col = 0; col < constantIndex; col++) {
-                if (matrix.getCoefficient(row, col) != 0.0) {
+                if (!matrix.getCoefficient(row, col).isZero()) {
                     allZeroColumns = false;
                     break;
                 }
             }
 
-            if (allZeroColumns && matrix.getCoefficient(row, constantIndex) != 0.0) {
+            if (allZeroColumns && !matrix.getCoefficient(row, constantIndex).isZero()) {
                 thereIsASolution = false;
                 break;
             }
@@ -50,7 +50,7 @@ public class SolutionChecker {
             boolean equationIsSignificant = false;
 
             for (int col = 0; col < matrix.getLineLength(); col++) {
-                if (matrix.getCoefficient(row, col) != 0.0) {
+                if (!matrix.getCoefficient(row, col).isZero()) {
                     equationIsSignificant = true;
                     break;
                 }

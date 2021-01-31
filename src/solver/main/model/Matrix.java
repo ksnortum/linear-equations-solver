@@ -50,13 +50,13 @@ public class Matrix {
         return matrix.get(index);
     }
 
-    public double getCoefficient(int row, int column) {
+    public Complex getCoefficient(int row, int column) {
         if (row < 0 || row >= getSize()) {
             Exception e = new RuntimeException(
                     String.format("Matrix::getCoefficient(): Row is out of range (%d)", row));
             e.printStackTrace();
 
-            return Double.NaN;
+            return Complex.NaN;
         }
 
         if (column < 0 || column >= getLineLength()) {
@@ -64,7 +64,7 @@ public class Matrix {
                     String.format("Matrix::getCoefficient(): Column is out of range (%d)", column));
             e.printStackTrace();
 
-            return Double.NaN;
+            return Complex.NaN;
         }
 
         return matrix.get(row).getColumn(column);
@@ -74,7 +74,7 @@ public class Matrix {
      * Multiplies source row, then add it to target row.
      * Source row should not be affected in the matrix, only the target row.
      */
-    public void zeroTarget(int sourceIndex, int targetIndex, double multiplier) {
+    public void zeroTarget(int sourceIndex, int targetIndex, Complex multiplier) {
         MatrixRow newSourceRow = matrix.get(sourceIndex).multiply(multiplier);
         matrix.get(targetIndex).addFrom(newSourceRow);
     }
@@ -83,7 +83,7 @@ public class Matrix {
      * Multiplies all columns in the row indexed by the multiplier.
      * This row affects in the matrix.
      */
-    public void multiplyRow(int index, double multiplier) {
+    public void multiplyRow(int index, Complex multiplier) {
         matrix.set(index, matrix.get(index).multiply(multiplier));
     }
 

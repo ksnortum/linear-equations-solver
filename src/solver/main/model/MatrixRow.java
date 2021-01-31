@@ -6,13 +6,13 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class MatrixRow {
-    private final List<Double> row;
+    private final List<Complex> row;
 
     public MatrixRow() {
         row = new ArrayList<>();
     }
 
-    public MatrixRow(List<Double> row) {
+    public MatrixRow(List<Complex> row) {
         this.row = row;
     }
 
@@ -20,11 +20,11 @@ public class MatrixRow {
         row = new ArrayList<>(matrixRow.getRow());
     }
 
-    public void add(double d) {
-        row.add(d);
+    public void add(Complex complex) {
+        row.add(complex);
     }
 
-    public List<Double> getRow() {
+    public List<Complex> getRow() {
         return row;
     }
 
@@ -32,11 +32,11 @@ public class MatrixRow {
         return row.size();
     }
 
-    public double getColumn(int index) {
+    public Complex getColumn(int index) {
         if (index < 0 || index >= row.size()) {
             System.err.println("MatrixRow::getColumn(): Index out of range");
 
-            return Double.NaN;
+            return Complex.NaN;
         }
 
         return row.get(index);
@@ -46,11 +46,11 @@ public class MatrixRow {
      * @param multiplier the number to multiply each element in the row by
      * @return a new MatrixRow, with the multiplied elements
      */
-    public MatrixRow multiply(double multiplier) {
-        List<Double> affected = new ArrayList<>(row);
+    public MatrixRow multiply(Complex multiplier) {
+        List<Complex> affected = new ArrayList<>(row);
 
         for (int i = 0; i < row.size(); i++) {
-            affected.set(i, multiplier * row.get(i));
+            affected.set(i, row.get(i).multiply(multiplier));
         }
 
         return new MatrixRow(affected);
@@ -70,7 +70,7 @@ public class MatrixRow {
         }
 
         for (int i = 0; i < row.size(); i++) {
-            row.set(i, affectingRow.getColumn(i) + row.get(i));
+            row.set(i, row.get(i).add(affectingRow.getColumn(i)));
         }
 
         return this;
@@ -78,7 +78,7 @@ public class MatrixRow {
 
     public MatrixRow swapColumn(Swap swap) {
         if (swap.getColFrom() != swap.getColTo()) {
-            double temp = row.get(swap.getColFrom());
+            Complex temp = row.get(swap.getColFrom());
             row.set(swap.getColFrom(), row.get(swap.getColTo()));
             row.set(swap.getColTo(), temp);
         }
@@ -103,7 +103,7 @@ public class MatrixRow {
     public String toString() {
         return getRow()
                 .stream()
-                .map(String::valueOf)
+                .map(Complex::toString)
                 .collect(Collectors.joining(" "));
     }
 }

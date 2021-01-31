@@ -10,12 +10,16 @@ public class TestComplex {
     private void run() {
         setup();
         testConstructors();
+        testToString();
+        testParse();
         testAdditionIntegers();
         testAdditionDoubles();
         testSubtractionDoubles();
         testMultiplicationDoubles();
         testDivisionDoubles();
         testChainAdditionAndDivision();
+        testNaN();
+        testNegate();
 
         System.out.printf("All tests in %s have been completed%n", getClass());
     }
@@ -28,6 +32,33 @@ public class TestComplex {
         assert(actual.getReal() == 1 && actual.getImaginary() == 2);
         Complex copy = new Complex(actual);
         assert(actual != copy && actual.equals(copy)); // Warning OK
+    }
+
+    private void testToString() {
+        String expected;
+        assert("0.0".equals(Complex.ZERO.toString()));
+        assert("1.0".equals(Complex.ONE.toString()));
+        assert("-2.15".equals(new Complex(-2.15, 0).toString()));
+        expected = new Complex(0, 1).toString();
+        System.out.println(expected); // TODO debug
+        assert("i".equals(expected));
+        expected = new Complex(0, -1).toString();
+        System.out.println(expected); // TODO debug
+        assert("-i".equals(expected));
+        expected = new Complex(1, 1).toString();
+        System.out.println(expected); // TODO debug
+        assert("1.0+i".equals(expected));
+        expected = new Complex(1, -1).toString();
+        System.out.println(expected); // TODO debug
+        assert("1.0-i".equals(expected));
+        assert("1.0+2.0i".equals(new Complex(1, 2).toString()));
+        expected = new Complex(1, -2).toString();
+        System.out.println(expected); // TODO debug
+        assert("1.0-2.0i".equals(expected));
+    }
+
+    private void testParse() {
+        // TODO
     }
 
     private void testAdditionIntegers() {
@@ -89,5 +120,21 @@ public class TestComplex {
         assert(expected.equals(actual));
         assert(addend.equals(new Complex(4.2, 3.7)));
         assert(divisor.equals(new Complex(3.8, 7.5)));
+    }
+
+    private void testNaN() {
+        Complex notANumber = new Complex(0, 0, Complex.Type.NAN);
+        assert(notANumber.toString().equals(Complex.NaN.toString()));
+    }
+
+    private void testNegate() {
+        Complex actual = new Complex(0.25, 1.75);
+        Complex expected = new Complex(-0.25, -1.75);
+        actual.negate();
+        assert(expected.equals(actual));
+    }
+
+    private void testInverse() {
+        // TODO
     }
 }

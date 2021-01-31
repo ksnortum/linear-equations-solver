@@ -15,7 +15,7 @@ public class NonZeroCoefficientFinder {
             int col = startingCol;
 
             // Search down from this starting row/col
-            while (row < matrix.getSize() && matrix.getCoefficient(row, col) == 0) {
+            while (row < matrix.getSize() && matrix.getCoefficient(row, col).isZero()) {
                 row++;
             }
 
@@ -28,7 +28,7 @@ public class NonZeroCoefficientFinder {
             row = startingRow;
             col++;
 
-            while (col < constantColumn && matrix.getCoefficient(row, col) == 0) {
+            while (col < constantColumn && matrix.getCoefficient(row, col).isZero()) {
                 col++;
             }
 

@@ -1,6 +1,7 @@
 package solver.main.control;
 
 import solver.main.logic.EquationSolver;
+import solver.main.model.Complex;
 import solver.main.model.Matrix;
 import solver.main.model.MatrixRow;
 
@@ -90,7 +91,7 @@ public class Executor {
             MatrixRow matrixRow = new MatrixRow();
 
             for (String part : parts) {
-                matrixRow.add(Double.parseDouble(part));
+                matrixRow.add(Complex.parse(part));
             }
 
             matrix.add(matrixRow);
@@ -122,7 +123,7 @@ public class Executor {
 
             //for (int row = 0; row < matrix.getSize(); row++) { // TODO debug
             for (int row = 0; row < numberOfVariables; row++) {
-                double constant = matrix.getCoefficient(row, constantColumn);
+                Complex constant = matrix.getCoefficient(row, constantColumn);
                 System.out.printf("%s ", constant);
                 String line = String.format("%s%n", constant);
                 writeLineToFile(path, line);

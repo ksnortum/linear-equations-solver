@@ -1,6 +1,7 @@
 package solver.main.logic;
 
 import solver.main.control.Executor;
+import solver.main.model.Complex;
 import solver.main.model.Matrix;
 import solver.main.model.Swap;
 
@@ -34,10 +35,10 @@ public class EquationSolver {
                  sourceRow < matrix.getSize() - 1 && column < matrix.getLineLength() - 1;
                  sourceRow++, column++) {
 
-            double sourceCoefficient = matrix.getCoefficient(sourceRow, column);
+            Complex sourceCoefficient = matrix.getCoefficient(sourceRow, column);
 
             // Avoid dividing by zero
-            if (sourceCoefficient == 0.0) {
+            if (sourceCoefficient.isZero()) {
 
                 // search for non-zero coefficient
                 Swap swap = finder.findNonZeroCoefficient(matrix, sourceRow, column);
@@ -55,7 +56,7 @@ public class EquationSolver {
                 sourceCoefficient = matrix.getCoefficient(sourceRow, column);
 
                 // We swapped to get a non-zero coefficient, so something's wrong if it's zero still
-                if (sourceCoefficient == 0.0) {
+                if (sourceCoefficient.isZero()) {
                     System.err.println("Coefficient is zero");
                     break;
                 }
@@ -63,10 +64,10 @@ public class EquationSolver {
 
             // Loop through all equations below the current one, zeroing them
             for (int targetRow = sourceRow + 1; targetRow < matrix.getSize(); targetRow++) {
-                double targetCoefficient = matrix.getCoefficient(targetRow, column);
+                Complex targetCoefficient = matrix.getCoefficient(targetRow, column);
 
-                if (targetCoefficient != 0.0) {
-                    double multiplier = -targetCoefficient / sourceCoefficient;
+                if (!targetCoefficient.isZero()) {
+                    Complex multiplier = targetCoefficient.negate().divide(sourceCoefficient);
                     System.out.printf("%s * R%d + R%d -> R%d%n",
                             multiplier, sourceRow + 1, targetRow + 1, targetRow + 1);
                     matrix.zeroTarget(sourceRow, targetRow, multiplier);
@@ -91,17 +92,17 @@ public class EquationSolver {
 
         // Loop through all rows except the first, as you need to examine the row above
         for (int sourceRow = 1; sourceRow < matrix.getSize(); sourceRow++) {
-            double sourceCoefficient = matrix.getCoefficient(sourceRow, column);
+            Complex sourceCoefficient = matrix.getCoefficient(sourceRow, column);
 
             // Avoid dividing by zero
-            if (sourceCoefficient != 0.0) {
+            if (!sourceCoefficient.isZero()) {
 
                 // Loop through all equations above the current one
                 for (int targetRow = sourceRow - 1; targetRow >= 0; targetRow--) {
-                    double targetCoefficient = matrix.getCoefficient(targetRow, column);
+                    Complex targetCoefficient = matrix.getCoefficient(targetRow, column);
 
-                    if (targetCoefficient != 0) {
-                        double multiplier = -targetCoefficient / sourceCoefficient;
+                    if (!targetCoefficient.isZero()) {
+                        Complex multiplier = targetCoefficient.negate().divide(sourceCoefficient);
                         System.out.printf("%s * R%d + R%d -> R%d%n",
                                 multiplier, sourceRow + 1, targetRow + 1, targetRow + 1);
                         matrix.zeroTarget(sourceRow, targetRow, multiplier);
@@ -117,11 +118,11 @@ public class EquationSolver {
         int column = 0;
 
         for (int row = 0; row < matrix.getSize(); row++) {
-            double coefficient = matrix.getCoefficient(row, column);
+            Complex coefficient = matrix.getCoefficient(row, column);
 
-            if (coefficient != 0) {
-                if (coefficient != 1) {
-                    double multiplier = 1 / coefficient;
+            if (!coefficient.isZero()) {
+                if (!coefficient.equals(Complex.ONE)) {
+                    Complex multiplier = coefficient.inverse();
                     System.out.printf("%s * R%d -> R%d%n", multiplier, row + 1, row + 1);
                     matrix.multiplyRow(row, multiplier);
                 }
