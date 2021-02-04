@@ -30,6 +30,7 @@ public class SolutionChecker {
                 }
             }
 
+            // all column coefficients are zero, but the constant is not
             if (allZeroColumns && !matrix.getCoefficient(row, constantIndex).isZero()) {
                 thereIsASolution = false;
                 break;
@@ -49,7 +50,8 @@ public class SolutionChecker {
         for (int row = 0; row < matrix.getSize(); row++) {
             boolean equationIsSignificant = false;
 
-            for (int col = 0; col < matrix.getLineLength(); col++) {
+            // loop through all coefficients but not the constant
+            for (int col = 0; col < matrix.getLineLength() - 1; col++) {
                 if (!matrix.getCoefficient(row, col).isZero()) {
                     equationIsSignificant = true;
                     break;

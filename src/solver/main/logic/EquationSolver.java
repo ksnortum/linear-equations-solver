@@ -17,6 +17,7 @@ public class EquationSolver {
         Executor.SolutionState state = checker.checkForSolution(matrix, numberOfVariables);
 
         if (state != Executor.SolutionState.SOLUTION) {
+            System.out.println("There isn't a solution, or there are infinitely many"); // TODO debug
             return state;
         }
 
@@ -43,13 +44,14 @@ public class EquationSolver {
                 // search for non-zero coefficient
                 Swap swap = finder.findNonZeroCoefficient(matrix, sourceRow, column);
 
-                // if no non-zero coefficient found, exit for-loop
+                // if no non-zero coefficient found, the algorithm is over
                 if (swap.isEmpty()) {
                     break;
                 }
 
-                printSwapDebugging(swap);
+                printSwapInfo(swap);
                 matrix.swap(swap);
+                System.out.printf("%n%s%n%n", matrix); // TODO debug
                 swaps.push(swap);
 
                 // SourceCoefficient has changed after the swap, so get it again
@@ -67,16 +69,19 @@ public class EquationSolver {
                 Complex targetCoefficient = matrix.getCoefficient(targetRow, column);
 
                 if (!targetCoefficient.isZero()) {
-                    Complex multiplier = targetCoefficient.negate().divide(sourceCoefficient);
+                    Complex multiplier = Matrix.createMultiplier(sourceCoefficient, targetCoefficient);
                     System.out.printf("%s * R%d + R%d -> R%d%n",
                             multiplier, sourceRow + 1, targetRow + 1, targetRow + 1);
                     matrix.zeroTarget(sourceRow, targetRow, multiplier);
+                    System.out.printf("%n%s%n%n", matrix); // TODO debug
                 }
             }
         }
+
+        System.out.printf("%nZero coefficients below, matrix:%n%s%n%n", matrix); // TODO debug
     }
 
-    private void printSwapDebugging(Swap swap) {
+    private void printSwapInfo(Swap swap) {
         if (swap.getRowFrom() != swap.getRowTo()) {
             System.out.printf("R%d <-> R%d%n", swap.getRowFrom() + 1, swap.getRowTo() + 1);
 
@@ -102,7 +107,7 @@ public class EquationSolver {
                     Complex targetCoefficient = matrix.getCoefficient(targetRow, column);
 
                     if (!targetCoefficient.isZero()) {
-                        Complex multiplier = targetCoefficient.negate().divide(sourceCoefficient);
+                        Complex multiplier = Matrix.createMultiplier(sourceCoefficient, targetCoefficient);
                         System.out.printf("%s * R%d + R%d -> R%d%n",
                                 multiplier, sourceRow + 1, targetRow + 1, targetRow + 1);
                         matrix.zeroTarget(sourceRow, targetRow, multiplier);
@@ -112,6 +117,8 @@ public class EquationSolver {
 
             column++;
         }
+
+        System.out.printf("%nZero coefficients above, matrix:%n%s%n%n", matrix); // TODO debug
     }
 
     private void createUnitDiagonal(Matrix matrix) {
@@ -120,16 +127,16 @@ public class EquationSolver {
         for (int row = 0; row < matrix.getSize(); row++) {
             Complex coefficient = matrix.getCoefficient(row, column);
 
-            if (!coefficient.isZero()) {
-                if (!coefficient.equals(Complex.ONE)) {
-                    Complex multiplier = coefficient.inverse();
-                    System.out.printf("%s * R%d -> R%d%n", multiplier, row + 1, row + 1);
-                    matrix.multiplyRow(row, multiplier);
-                }
+            if (!coefficient.isZero() && !coefficient.equals(Complex.ONE)) {
+                Complex multiplier = coefficient.inverse();
+                System.out.printf("%s * R%d -> R%d%n", multiplier, row + 1, row + 1);
+                matrix.multiplyRow(row, multiplier);
             }
 
             column++;
         }
+
+        System.out.printf("%nCreate Unit Diagonal, matrix:%n%s%n%n", matrix); // TODO debug
     }
 
     private void undoSwaps(Matrix matrix) {

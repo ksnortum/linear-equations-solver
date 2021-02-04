@@ -2,6 +2,7 @@ package solver.main.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class Matrix {
@@ -14,6 +15,17 @@ public class Matrix {
 
     public Matrix(List<MatrixRow> matrix) {
         this.matrix = matrix;
+    }
+
+    /**
+     * Creates a multiplier that when multiplied by the source and added
+     * to the target number, will zero the target.
+     * @param source the source number
+     * @param target the target number
+     * @return a multiplier
+     */
+    public static Complex createMultiplier(Complex source, Complex target) {
+        return target.negate().divide(source);
     }
 
     public void add(MatrixRow row) {
@@ -71,39 +83,75 @@ public class Matrix {
     }
 
     /**
-     * Multiplies source row, then add it to target row.
-     * Source row should not be affected in the matrix, only the target row.
+     * Multiplies source row, then adds it to target row.
+     * Source row is not affected in the matrix, only the target row.
+     * @param sourceIndex index to the source row in the Matrix
+     * @param targetIndex index to the target row in the Matrix
+     * @param multiplier number to multiply the source row by
      */
     public void zeroTarget(int sourceIndex, int targetIndex, Complex multiplier) {
-        MatrixRow newSourceRow = matrix.get(sourceIndex).multiply(multiplier);
-        matrix.get(targetIndex).addFrom(newSourceRow);
+        MatrixRow multipliedSourceRow = matrix.get(sourceIndex).multiply(multiplier);
+        matrix.set(targetIndex, matrix.get(targetIndex).addFrom(multipliedSourceRow));
     }
 
     /**
      * Multiplies all columns in the row indexed by the multiplier.
-     * This row affects in the matrix.
+     * This row is affected in the matrix.
+     * @param index the index of the row to be multiplied
+     * @param multiplier the number to multiply by
      */
     public void multiplyRow(int index, Complex multiplier) {
         matrix.set(index, matrix.get(index).multiply(multiplier));
     }
 
     /**
-     * Swap columns and rows.  To swap only rows, make the "to" and "from"
+     * Swap columns and rows.  To swap entire rows, make the "to" and "from"
      * columns the same.  To swap only columns, make the "to" and "from"
-     * row the same. When swapping columns, be sure to set the "from"
-     * row correctly.
+     * row the same. When swapping columns from different rows, be sure
+     * to set the "from" row correctly.
      * @param swap the {@link Swap} object
      */
     public void swap(Swap swap) {
-        if (swap.getColFrom() != swap.getColTo()) {
-            matrix.get(swap.getRowFrom()).swapColumn(swap);
+        if (swap.isEmpty()) {
+            return;
         }
 
-        if (swap.getRowFrom() != swap.getRowTo()) {
-            MatrixRow temp = matrix.get(swap.getRowTo());
-            matrix.set(swap.getRowTo(), matrix.get(swap.getRowFrom()));
-            matrix.set(swap.getRowFrom(), temp);
+        int rowFrom = swap.getRowFrom();
+        int colFrom = swap.getColFrom();
+        int rowTo = swap.getRowTo();
+        int colTo = swap.getColTo();
+
+        // Column and row swap
+        if (colFrom != colTo && rowFrom != rowTo) {
+            Complex temp = matrix.get(rowTo).getColumn(colTo);
+            matrix.get(rowTo).setColumn(colTo, matrix.get(rowFrom).getColumn(colFrom));
+            matrix.get(rowFrom).setColumn(colFrom, temp);
+        } else
+
+            // Column only swap
+            if (colFrom != colTo) {
+                matrix.get(rowFrom).swapColumn(swap);
+        } else
+
+            // Row only swap
+            if (rowFrom != rowTo) {
+                MatrixRow temp = matrix.get(rowTo);
+                matrix.set(rowTo, matrix.get(rowFrom));
+                matrix.set(rowFrom, temp);
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Matrix other = (Matrix) o;
+        return getLineLength() == other.getLineLength() && getMatrix().equals(other.getMatrix());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getMatrix(), getLineLength());
     }
 
     @Override

@@ -121,7 +121,6 @@ public class Executor {
             int constantColumn = matrix.getLineLength() - 1;
             System.out.println("Solution:");
 
-            //for (int row = 0; row < matrix.getSize(); row++) { // TODO debug
             for (int row = 0; row < numberOfVariables; row++) {
                 Complex constant = matrix.getCoefficient(row, constantColumn);
                 System.out.printf("%s ", constant);

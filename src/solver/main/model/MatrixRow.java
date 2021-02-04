@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+// TODO make immutable (sort of)
 public class MatrixRow {
     private final List<Complex> row;
 
@@ -13,7 +14,7 @@ public class MatrixRow {
     }
 
     public MatrixRow(List<Complex> row) {
-        this.row = row;
+        this.row = new ArrayList<>(row);
     }
 
     public MatrixRow(MatrixRow matrixRow) {
@@ -21,11 +22,14 @@ public class MatrixRow {
     }
 
     public void add(Complex complex) {
-        row.add(complex);
+        row.add(new Complex(complex));
     }
 
+    /**
+     * @return a copy of the row
+     */
     public List<Complex> getRow() {
-        return row;
+        return new ArrayList<>(row);
     }
 
     public int getSize() {
@@ -39,18 +43,34 @@ public class MatrixRow {
             return Complex.NaN;
         }
 
-        return row.get(index);
+        return new Complex(row.get(index));
+    }
+
+    public MatrixRow setColumn(int index, Complex in) {
+        if (index < 0 || index >= row.size()) {
+            System.err.println("MatrixRow::setColumn(): Index out of range");
+
+            return null;
+        }
+
+        row.set(index, in);
+
+        return this;
     }
 
     /**
+     * Multiply all numbers in this row list by the multiplier,
+     * returning a new MatrixRow based on the new list.  Does not
+     * affect this MatrixRow.
      * @param multiplier the number to multiply each element in the row by
      * @return a new MatrixRow, with the multiplied elements
      */
     public MatrixRow multiply(Complex multiplier) {
-        List<Complex> affected = new ArrayList<>(row);
+        List<Complex> affected = new ArrayList<>();
 
-        for (int i = 0; i < row.size(); i++) {
-            affected.set(i, row.get(i).multiply(multiplier));
+        for (Complex complex : row) {
+            Complex copyComplex = new Complex(complex);
+            affected.add(copyComplex.multiply(multiplier).getRounded());
         }
 
         return new MatrixRow(affected);
@@ -60,20 +80,22 @@ public class MatrixRow {
      * Add each element from the affecting row to this row.
      *
      * @param affectingRow the MatrixRow to get the addends from
-     * @return this row with its elements added to
+     * @return a new row with its elements added to
      */
     public MatrixRow addFrom(MatrixRow affectingRow) {
         if (row.size() != affectingRow.getSize()) {
-            System.err.println("MatrixRow::addTo(): Rows are different sizes");
+            System.err.println("MatrixRow::addFrom(): Rows are different sizes");
 
             return null;
         }
 
-        for (int i = 0; i < row.size(); i++) {
-            row.set(i, row.get(i).add(affectingRow.getColumn(i)));
+        List<Complex> rowCopy = new ArrayList<>(row);
+
+        for (int i = 0; i < rowCopy.size(); i++) {
+            rowCopy.set(i, rowCopy.get(i).add(affectingRow.getColumn(i)));
         }
 
-        return this;
+        return new MatrixRow(rowCopy);
     }
 
     public MatrixRow swapColumn(Swap swap) {
