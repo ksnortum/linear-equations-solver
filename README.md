@@ -34,3 +34,7 @@ After executing the program, the output will contain one of three things:
 * The text, "There are no solutions"
 * The text, "There are infinitely many solutions"
 * The solution, one variable per line
+
+### Credit
+
+This is a project from [Hyperlink](https://hyperlink.org).
