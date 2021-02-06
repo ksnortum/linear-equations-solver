@@ -37,4 +37,4 @@ After executing the program, the output will contain one of three things:
 
 ### Credit
 
-This is a project from [Hyperlink](https://hyperlink.org).
+This is a project from [Hyperskill](https://hyperskill.org).
