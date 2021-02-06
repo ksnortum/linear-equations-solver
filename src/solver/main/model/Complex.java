@@ -1,20 +1,22 @@
 package solver.main.model;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.math.RoundingMode;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Represents a complex number.  Immutable.
+ * Represents a complex number.  Immutable (I think).
  */
 public class Complex {
     public enum Type { REGULAR, NAN }
 
-    public static final Complex NaN = new Complex(0, 0, Type.NAN);
-    public static final Complex ZERO = new Complex(0, 0);
-    public static final Complex ONE = new Complex(1, 0);
+    public static final Complex NaN = new Complex(BigDecimal.ZERO, BigDecimal.ZERO, Type.NAN);
+    public static final Complex ZERO = new Complex(BigDecimal.ZERO, BigDecimal.ZERO);
+    public static final Complex ONE = new Complex(BigDecimal.ONE, BigDecimal.ZERO);
+    public static final Complex NEGATIVE_ONE = new Complex(new BigDecimal("-1"), BigDecimal.ZERO);
 
     private static final String RE_UNSIGNED_DECIMAL = "\\d+(\\.\\d+)?";
     private static final String RE_COMPLEX_NUMBER =
@@ -41,16 +43,18 @@ public class Complex {
     private static final String RE_IMAGINARY_ONLY = "(?<imaginaryPart>-?" + RE_UNSIGNED_DECIMAL + ")i";
     private static final Pattern IMAGINARY_ONLY = Pattern.compile(RE_IMAGINARY_ONLY);
 
-    private static final int PLACES_TO_ROUND = 9;
-    private static final double EQUALITY_DELTA = 0.000000001;
+    private static final MathContext MATH_CONTEXT = MathContext.DECIMAL128;
+    private static final int PLACES_TO_ROUND = 4;
+    private static final RoundingMode ROUNDING_MODE = RoundingMode.HALF_EVEN;
+    private static final int DIVIDE_SCALE = 128;
 
     public static Complex parse(String in) {
         if ("i".equals(in)) {
-            return new Complex(0, 1);
+            return new Complex(BigDecimal.ZERO, BigDecimal.ONE);
         } else if ("-i".equals(in)) {
-            return new Complex(0, -1);
+            return new Complex(BigDecimal.ZERO, new BigDecimal("-1"));
         } else if (!in.endsWith("i")) {
-            return new Complex(Double.parseDouble(in), 0);
+            return new Complex(new BigDecimal(in, MATH_CONTEXT));
         }
 
         // isn't i or -i and ends with "i"
@@ -60,14 +64,13 @@ public class Complex {
         if (matcher.matches()) {
             String realPart = matcher.group("realPart");
             String sign = matcher.group("sign");
-            double real = Double.parseDouble(realPart);
-            double imaginary = 1.0;
+            String imaginaryPart = "1";
 
             if ("-".equals(sign)) {
-                imaginary = -1.0;
+                imaginaryPart = "-1";
             }
 
-            return new Complex(real, imaginary);
+            return new Complex(new BigDecimal(realPart, MATH_CONTEXT), new BigDecimal(imaginaryPart, MATH_CONTEXT));
         }
 
         // look for imaginary part <> 1 or -1
@@ -75,75 +78,68 @@ public class Complex {
 
         if (matcher.matches()) {
             String imaginaryPart = matcher.group("imaginaryPart");
-            double real = 0.0;
-            double imaginary = Double.parseDouble(imaginaryPart);
 
-            return new Complex(real, imaginary);
+            return new Complex(BigDecimal.ZERO, new BigDecimal(imaginaryPart, MATH_CONTEXT));
         }
 
         // both real and imaginary parts
         matcher = COMPLEX_NUMBER.matcher(in);
 
         if (!matcher.matches()) {
-            System.err.printf("Complex::parse, can't match complex number (%s)%n", in);
+            Exception e = new RuntimeException(String.format("Can't match complex number (%s)%n", in));
+            e.printStackTrace();
 
             return Complex.NaN;
         }
 
         String realPart = matcher.group("realPart");
-        double real = Double.parseDouble(realPart);
         String imaginaryPart = matcher.group("imaginaryPart");
-        double imaginary = Double.parseDouble(imaginaryPart);
 
-        return new Complex(real, imaginary);
+        return new Complex(new BigDecimal(realPart, MATH_CONTEXT), new BigDecimal(imaginaryPart, MATH_CONTEXT));
     }
 
-    private double real;
-    private double imaginary;
+    private final BigDecimal real;
+    private final BigDecimal imaginary;
     private final Type type;
 
-    public Complex(double real, double imaginary, Type type) {
+    public Complex(BigDecimal real, BigDecimal imaginary, Type type) {
         this.real = real;
         this.imaginary = imaginary;
         this.type = type;
     }
 
-    public Complex(double real, double imaginary) {
+    public Complex(BigDecimal real, BigDecimal imaginary) {
         this(real, imaginary, Type.REGULAR);
     }
 
+    public Complex(BigDecimal real) {
+        this(real, BigDecimal.ZERO, Type.REGULAR);
+    }
+
+    public Complex(double real, double imaginary) {
+        this(new BigDecimal(String.valueOf(real), MATH_CONTEXT),
+                new BigDecimal(String.valueOf(imaginary), MATH_CONTEXT),
+                Type.REGULAR);
+    }
+
     public Complex(double real) {
-        this(real, 0, Type.REGULAR);
+        this(new BigDecimal(String.valueOf(real), MATH_CONTEXT), BigDecimal.ZERO, Type.REGULAR);
     }
 
     public Complex(Complex complex) {
         this(complex.getReal(), complex.getImaginary(), complex.getType());
     }
 
-    private static double round(double value) {
-        BigDecimal bd = new BigDecimal(Double.toString(value));
-        bd = bd.setScale(PLACES_TO_ROUND, RoundingMode.HALF_UP);
-
-        return bd.doubleValue();
-    }
-
-    public double getReal() {
+    public BigDecimal getReal() {
         return real;
     }
 
-    public double getImaginary() {
+    public BigDecimal getImaginary() {
         return imaginary;
     }
 
     public Type getType() {
         return type;
-    }
-
-    public Complex getRounded() {
-        double newReal = round(real);
-        double newImaginary = round(imaginary);
-
-        return new Complex(newReal, newImaginary);
     }
 
     /**
@@ -153,7 +149,7 @@ public class Complex {
      * @return a new complex number
      */
     public Complex add(Complex complex) {
-        return new Complex(real + complex.getReal(), imaginary + complex.getImaginary());
+        return new Complex(real.add(complex.getReal()), imaginary.add(complex.getImaginary()));
     }
 
     /**
@@ -163,7 +159,7 @@ public class Complex {
      * @return a new complex number
      */
     public Complex subtract(Complex complex) {
-        return new Complex(real - complex.getReal(), imaginary - complex.getImaginary());
+        return new Complex(real.subtract(complex.getReal()), imaginary.subtract(complex.getImaginary()));
     }
 
     /**
@@ -173,8 +169,11 @@ public class Complex {
      * @return a new complex number
      */
     public Complex multiply(Complex complex) {
-        double newReal = real * complex.getReal() - imaginary * complex.getImaginary();
-        double newImaginary = real * complex.getImaginary() + complex.getReal() * imaginary;
+        // newReal = real * complex.getReal() - imaginary * complex.getImaginary()
+        BigDecimal newReal = (real.multiply(complex.getReal())).subtract(imaginary.multiply(complex.getImaginary()));
+
+        // newImaginary = real * complex.getImaginary() + * imaginary * complex.getReal()
+        BigDecimal newImaginary = (real.multiply(complex.getImaginary())).add(imaginary.multiply(complex.getReal()));
 
         return new Complex(newReal, newImaginary);
     }
@@ -186,16 +185,29 @@ public class Complex {
      * @return a new complex number, divided
      */
     public Complex divide(Complex complex) {
-        double denominator = complex.getReal() * complex.getReal() + complex.getImaginary() * complex.getImaginary();
+        // denominator = complex.getReal() * complex.getReal() + complex.getImaginary() * complex.getImaginary()
+        BigDecimal denominator = (complex.getReal().multiply(complex.getReal()))
+                .add(complex.getImaginary().multiply(complex.getImaginary()));
+        BigDecimal denominatorToCompare = denominator.setScale(PLACES_TO_ROUND, ROUNDING_MODE);
+        BigDecimal zeroToCompare = BigDecimal.ZERO.setScale(PLACES_TO_ROUND, ROUNDING_MODE);
 
-        if (denominator == 0.0) {
-            System.err.println("Complex::divide, attempted division by zero");
+
+        if (denominatorToCompare.equals(zeroToCompare)) {
+            Exception e = new RuntimeException("Attempted division by zero");
+            e.printStackTrace();
 
             return Complex.NaN;
         }
 
-        double newReal = (real * complex.getReal() + imaginary * complex.getImaginary()) / denominator;
-        double newImaginary = (complex.getReal() * imaginary - real * complex.getImaginary()) / denominator;
+        // newReal = (real * complex.getReal() + imaginary * complex.getImaginary()) / denominator
+        BigDecimal newReal = ((real.multiply(complex.getReal()))
+                .add(imaginary.multiply(complex.getImaginary())))
+                .divide(denominator, DIVIDE_SCALE, ROUNDING_MODE);
+
+        // newImaginary = (complex.getReal() * imaginary - real * complex.getImaginary()) / denominator
+        BigDecimal newImaginary = ((complex.getReal().multiply(imaginary))
+                .subtract(real.multiply(complex.getImaginary())))
+                .divide(denominator, DIVIDE_SCALE, ROUNDING_MODE);
 
         return new Complex(newReal, newImaginary);
     }
@@ -205,7 +217,7 @@ public class Complex {
      * @return a new number negated
      */
     public Complex negate() {
-        return new Complex(-real, -imaginary);
+        return new Complex(real.negate(), imaginary.negate());
     }
 
     /**
@@ -214,78 +226,117 @@ public class Complex {
      */
     // inverse = conjugate / a^2 - b^2, conjugate = a - bi
     public Complex inverse() {
-        double denominator = real * real - imaginary * imaginary * -1; // i^2 = -1
+        BigDecimal denominator = (real.multiply(real))
+                .subtract(imaginary.multiply(imaginary).multiply(new BigDecimal("-1"))); // i^2 = -1
 
-        if (round(denominator) == 0.0) {
-            System.err.println("Complex::inverse, attempt to divide by zero");
+        if (denominator.equals(BigDecimal.ZERO)) {
+            Exception e = new RuntimeException("Attempt to divide by zero");
+            e.printStackTrace();
 
             return Complex.NaN;
         }
 
-        return new Complex(real / denominator, imaginary / denominator * -1);
+        return new Complex(real.divide(denominator, DIVIDE_SCALE, ROUNDING_MODE),
+                imaginary.divide(denominator, DIVIDE_SCALE, ROUNDING_MODE)
+                        .multiply(new BigDecimal("-1")));
+    }
+
+    public boolean realIsZero() {
+        BigDecimal realToCompare = real.setScale(PLACES_TO_ROUND, ROUNDING_MODE);
+        BigDecimal zeroToCompare = BigDecimal.ZERO.setScale(PLACES_TO_ROUND, ROUNDING_MODE);
+
+        return realToCompare.equals(zeroToCompare);
+    }
+
+    public boolean imaginaryIsZero() {
+        BigDecimal imaginaryToCompare = imaginary.setScale(PLACES_TO_ROUND, ROUNDING_MODE);
+        BigDecimal zeroToCompare = BigDecimal.ZERO.setScale(PLACES_TO_ROUND, ROUNDING_MODE);
+
+        return imaginaryToCompare.equals(zeroToCompare);
     }
 
     public boolean isZero() {
-        return round(real) == 0.0 && round(imaginary) == 0.0 && type != Type.NAN;
+        return realIsZero() && imaginaryIsZero() && type != Type.NAN;
     }
 
     @Override
     public String toString() {
-        double roundedReal = round(real);
-        double roundedImaginary = round(imaginary);
-
         if (type == Type.NAN) {
             return "NaN";
-        } else if (roundedReal == 0.0 && roundedImaginary == 0.0) {
-            return "0";
-        } else if (roundedReal == 0.0 && roundedImaginary == 1.0) {
-            return "i";
-        } else if (roundedReal == 0.0 && roundedImaginary == -1.0) {
-            return "-i";
+        }
+
+        if (realIsZero()) {
+            if (imaginaryIsZero()) {
+                return "0";
+            }
+
+            if (imaginary.equals(BigDecimal.ONE)) {
+                return "i";
+            }
+
+            if (imaginary.equals(new BigDecimal("-1"))) {
+                return "-i";
+            }
         }
 
         StringBuilder sb = new StringBuilder();
 
-        if (roundedReal != 0.0) {
-            sb.append(evenNumbers(roundedReal));
+        if (!realIsZero()) {
+            sb.append(removeTrailingZeros(real));
         }
 
-        if (roundedImaginary != 0.0) {
-            if (roundedReal != 0.0 && roundedImaginary > 0.0) {
+        if (!imaginaryIsZero()) {
+            // (x.compareTo(y) <op> 0), where <op> is one of the six comparison operators.
+            if (!realIsZero() && imaginary.compareTo(BigDecimal.ZERO) > 0) {
                 sb.append('+');
             }
 
-            if (roundedImaginary == 1.0) {
+            if (imaginary.equals(BigDecimal.ONE)) {
                 sb.append('i');
-            } else if (roundedImaginary == -1.0) {
+            } else if (imaginary.equals(new BigDecimal("-1"))) {
                 sb.append("-i");
             } else {
-                sb.append(evenNumbers(roundedImaginary)).append('i');
+                sb.append(removeTrailingZeros(imaginary)).append('i');
             }
         }
 
         return sb.toString();
     }
 
-    private String evenNumbers(double in) {
-        String out = String.valueOf(in);
+    // Two RE matches, (\\d+)(\\.0+), and (\\d+\\.\\d+)(0+)
+    private String removeTrailingZeros(BigDecimal in) {
+        String out = in.setScale(PLACES_TO_ROUND, ROUNDING_MODE).toString();
 
-        if (out.endsWith(".0")) {
-            out = out.substring(0, out.length() - 2);
+        if (!out.contains(".") || out.charAt(out.length() - 1) != '0') {
+            return out;
         }
 
-        return out;
+        int index = out.length() - 2;
+
+        while (out.charAt(index) != '.' && out.charAt(index) == '0') {
+            index--;
+        }
+
+        if (out.charAt(index) == '.') {
+            index--;
+        }
+
+        return out.substring(0, index + 1);
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
+        if (getType() == Type.NAN) return false;
         if (o == null || getClass() != o.getClass()) return false;
-        Complex complex = (Complex) o;
-        double delta = 0.000000001;
-        if (getType() == Type.NAN || complex.getType() == Type.NAN) return false;
-        return Math.abs(complex.getReal() - getReal()) < EQUALITY_DELTA
-                && Math.abs(complex.getImaginary() - getImaginary()) < EQUALITY_DELTA;
+        Complex other = (Complex) o;
+        if (other.getType() == Type.NAN) return false;
+        var realCompare = getReal().setScale(PLACES_TO_ROUND, ROUNDING_MODE);
+        var otherRealCompare = other.getReal().setScale(PLACES_TO_ROUND, ROUNDING_MODE);
+        var imaginaryCompare = getImaginary().setScale(PLACES_TO_ROUND, ROUNDING_MODE);
+        var otherImaginaryCompare = other.getImaginary().setScale(PLACES_TO_ROUND, ROUNDING_MODE);
+
+        return realCompare.equals(otherRealCompare) && imaginaryCompare.equals(otherImaginaryCompare);
     }
 
     @Override

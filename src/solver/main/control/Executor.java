@@ -29,7 +29,6 @@ public class Executor {
             System.out.println("Start solving the equation.");
             System.out.println("Row manipulation:");
             Matrix matrix = matrixOptional.get();
-            System.out.println(matrix); // TODO debug
             SolutionState state = equationSolver.solve(matrix, numberOfVariables);
             writeSolutionToOutputFile(matrix, state, numberOfVariables);
         }

@@ -17,7 +17,6 @@ public class EquationSolver {
         Executor.SolutionState state = checker.checkForSolution(matrix, numberOfVariables);
 
         if (state != Executor.SolutionState.SOLUTION) {
-            System.out.println("There isn't a solution, or there are infinitely many"); // TODO debug
             return state;
         }
 
@@ -31,7 +30,6 @@ public class EquationSolver {
     private void zeroCoefficientsBelow(Matrix matrix) {
 
         // loop through all except the last, as you need to compare the row below
-        // TODO, we are doing too much in this for-loop
         for (int sourceRow = 0, column = 0;
                  sourceRow < matrix.getSize() - 1 && column < matrix.getLineLength() - 1;
                  sourceRow++, column++) {
@@ -51,7 +49,6 @@ public class EquationSolver {
 
                 printSwapInfo(swap);
                 matrix.swap(swap);
-                System.out.printf("%n%s%n%n", matrix); // TODO debug
                 swaps.push(swap);
 
                 // SourceCoefficient has changed after the swap, so get it again
@@ -73,12 +70,9 @@ public class EquationSolver {
                     System.out.printf("%s * R%d + R%d -> R%d%n",
                             multiplier, sourceRow + 1, targetRow + 1, targetRow + 1);
                     matrix.zeroTarget(sourceRow, targetRow, multiplier);
-                    System.out.printf("%n%s%n%n", matrix); // TODO debug
                 }
             }
         }
-
-        System.out.printf("%nZero coefficients below, matrix:%n%s%n%n", matrix); // TODO debug
     }
 
     private void printSwapInfo(Swap swap) {
@@ -117,8 +111,6 @@ public class EquationSolver {
 
             column++;
         }
-
-        System.out.printf("%nZero coefficients above, matrix:%n%s%n%n", matrix); // TODO debug
     }
 
     private void createUnitDiagonal(Matrix matrix) {
@@ -135,8 +127,6 @@ public class EquationSolver {
 
             column++;
         }
-
-        System.out.printf("%nCreate Unit Diagonal, matrix:%n%s%n%n", matrix); // TODO debug
     }
 
     private void undoSwaps(Matrix matrix) {

@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-// TODO make immutable (sort of)
 public class MatrixRow {
     private final List<Complex> row;
 
@@ -38,7 +37,8 @@ public class MatrixRow {
 
     public Complex getColumn(int index) {
         if (index < 0 || index >= row.size()) {
-            System.err.println("MatrixRow::getColumn(): Index out of range");
+            Exception e = new RuntimeException("Index out of range");
+            e.printStackTrace();
 
             return Complex.NaN;
         }
@@ -70,7 +70,7 @@ public class MatrixRow {
 
         for (Complex complex : row) {
             Complex copyComplex = new Complex(complex);
-            affected.add(copyComplex.multiply(multiplier).getRounded());
+            affected.add(copyComplex.multiply(multiplier));
         }
 
         return new MatrixRow(affected);
