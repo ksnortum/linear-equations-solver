@@ -9,7 +9,7 @@ While in the root of the project (the same level as `Main.java` is in), execute 
 
     java Main -in <input file name> -out <output file name>
 
-*TODO* explain about compiling?
+*TODO* This doesn't really work.  Maybe make a Maven project?
 
 ### Structure of input file
 
